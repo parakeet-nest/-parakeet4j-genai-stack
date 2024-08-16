@@ -1,6 +1,6 @@
 FROM maven:3.9.6-eclipse-temurin-21 AS builder
 
-WORKDIR app
+WORKDIR /app
 COPY pom.xml pom.xml
 COPY src src
 
@@ -25,7 +25,7 @@ FROM bitnami/minideb:bullseye
 ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH "${JAVA_HOME}/bin:${PATH}"
 COPY --from=jre-build /javaruntime $JAVA_HOME
-WORKDIR app
+WORKDIR /app
 COPY --from=builder /app/target/hello-world-*-SNAPSHOT.jar hello-world.jar
 
 #ENTRYPOINT [ "java", "-jar", "hello-world.jar" ]

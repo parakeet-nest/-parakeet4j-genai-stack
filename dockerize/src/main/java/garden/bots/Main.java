@@ -1,7 +1,6 @@
 package garden.bots;
 
 
-import org.parakeetnest.parakeet4j.llm.Message;
 import org.parakeetnest.parakeet4j.llm.Options;
 import org.parakeetnest.parakeet4j.llm.Query;
 
@@ -10,10 +9,8 @@ import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Optional;
 
-import static org.parakeetnest.parakeet4j.completion.Completion.ChatStream;
 import static org.parakeetnest.parakeet4j.completion.Completion.GenerateStream;
 
 public class Main
