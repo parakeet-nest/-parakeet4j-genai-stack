@@ -1,0 +1,205 @@
+services:
+
+  ollama:
+    profiles: [ollama-container]
+    image: ollama/ollama:0.3.6
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - 11434:11434
+
+  pull-llm-all-minilm:
+    profiles: [ollama-container]
+    image: curlimages/curl:8.6.0
+    entrypoint: ["curl", "ollama:11434/api/pull", "-d", "{\"name\": \"all-minilm:33m\"}"]
+    depends_on:
+      ollama:
+        condition: service_started
+
+  pull-llm-qwen2:
+    profiles: [ollama-container]
+    image: curlimages/curl:8.6.0
+    entrypoint: ["curl", "ollama:11434/api/pull", "-d", "{\"name\": \"qwen2:0.5b\"}"]
+    depends_on:
+      ollama:
+        condition: service_started
+
+  pull-llm-tinyllama:
+    profiles: [ollama-container]
+    image: curlimages/curl:8.6.0
+    entrypoint: ["curl", "ollama:11434/api/pull", "-d", "{\"name\": \"tinyllama\"}"]
+    depends_on:
+      ollama:
+        condition: service_started
+        
+  pull-llm-tinydolphin:
+    profiles: [ollama-container]
+    image: curlimages/curl:8.6.0
+    entrypoint: ["curl", "ollama:11434/api/pull", "-d", "{\"name\": \"tinydolphin\"}"]
+    depends_on:
+      ollama:
+        condition: service_started
+        
+  pull-llm-gemma2:
+    profiles: [ollama-container]
+    image: curlimages/curl:8.6.0
+    entrypoint: ["curl", "ollama:11434/api/pull", "-d", "{\"name\": \"gemma2:2b\"}"]
+    depends_on:
+      ollama:
+        condition: service_started
+        
+  # docker compose --profile ollama-container up hello-world pull-llm-tinyllama ollama
+  hello-world:
+    profiles: [ollama-container]
+    build:
+      context: ./hello-world
+      dockerfile: Dockerfile
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - LLM=${LLM:-tinyllama}
+      # host.docker.internal: listening the host from the container
+    develop:
+      watch:
+        - action: rebuild
+          path: ./hello-world/Dockerfile
+        - action: rebuild
+          path: ./hello-world/src
+    depends_on:
+      pull-llm-tinyllama:
+        condition: service_completed_successfully
+
+  # You have to be sure that ollama is running before this
+  # and that the LLM(s) are pulled before this
+  # docker compose --profile ollama-local up hello-world-ollama-local
+  hello-world-ollama-local:
+    profiles: [ollama-local]
+    build:
+      context: ./hello-world
+      dockerfile: Dockerfile
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - LLM=${LLM:-tinyllama}
+      # host.docker.internal: listening the host from the container
+    develop:
+      watch:
+        - action: rebuild
+          path: ./hello-world/Dockerfile
+        - action: rebuild
+          path: ./hello-world/src
+
+  # docker compose --profile ollama-container up hello-world-again pull-llm-tinyllama ollama
+  hello-world-again:
+    profiles: [ollama-container]
+    build:
+      context: ./hello-world-again
+      dockerfile: Dockerfile
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - LLM=${LLM:-tinyllama}
+      # host.docker.internal: listening the host from the container
+    develop:
+      watch:
+        - action: rebuild
+          path: ./hello-world-again/Dockerfile
+        - action: rebuild
+          path: ./hello-world-again/src
+    depends_on:
+      pull-llm-tinyllama:
+        condition: service_completed_successfully
+
+  # docker compose --profile ollama-container up chronicles-embeddings pull-llm-all-minilm ollama
+  chronicles-embeddings:
+    profiles: [ollama-container]
+    build:
+      context: ./chronicles-embeddings
+      dockerfile: Dockerfile
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - LLM=${LLM:-all-minilm:33m}
+      # host.docker.internal: listening the host from the container
+    volumes:
+      - ./chronicles-embeddings/data:/data
+    develop:
+      watch:
+        - action: rebuild
+          path: ./chronicles-embeddings/Dockerfile
+        - action: rebuild
+          path: ./chronicles-embeddings/src
+    depends_on:
+      pull-llm-all-minilm:
+        condition: service_completed_successfully
+
+  # docker compose --profile ollama-container up chronicles pull-llm-all-minilm pull-llm-qwen2 ollama
+  chronicles:
+    profiles: [ollama-container]
+    build:
+      context: ./chronicles
+      dockerfile: Dockerfile
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - EMBEDDING_LLM=${EMBEDDING_LLM:-all-minilm:33m}
+      - CHAT_LLM=${CHAT_LLM:-qwen2:0.5b}
+      # host.docker.internal: listening the host from the container
+    volumes:
+      - ./chronicles-embeddings/data:/data
+    develop:
+      watch:
+        - action: rebuild
+          path: ./chronicles/Dockerfile
+        - action: rebuild
+          path: ./chronicles/src
+    depends_on:
+      pull-llm-all-minilm:
+        condition: service_completed_successfully
+      pull-llm-qwen2:
+        condition: service_completed_successfully
+        
+  # docker compose --profile ollama-container up dockerize pull-llm-gemma2 ollama
+  dockerize:
+    profiles: [ollama-container]
+    build:
+      context: ./dockerize
+      dockerfile: Dockerfile
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - LLM=${LLM:-gemma2:2b}
+      # host.docker.internal: listening the host from the container
+    volumes:
+      - ./dockerize/data:/data
+    develop:
+      watch:
+        - action: rebuild
+          path: ./dockerize/Dockerfile
+        - action: rebuild
+          path: ./dockerize/src
+    depends_on:
+      pull-llm-gemma2:
+        condition: service_completed_successfully        
+        
+  # You have to be sure that ollama is running before this
+  # and that the LLM(s) are pulled before this
+  # docker compose --profile ollama-local up dockerize-ollama-local
+  dockerize-ollama-local:
+    profiles: [ollama-local]
+    build:
+      context: ./dockerize
+      dockerfile: Dockerfile
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - LLM=${LLM:-gemma2:2b}
+      # host.docker.internal: listening the host from the container
+    volumes:
+      - ./dockerize/data:/data
+    develop:
+      watch:
+        - action: rebuild
+          path: ./dockerize/Dockerfile
+        - action: rebuild
+          path: ./dockerize/src        
+                
+volumes:
+  ollama-data:
+
+# docker compose --profile ollama-container up
+# OLLAMA_BASE_URL=http://ollama:11434 docker compose --profile ollama-container up
+# OLLAMA_BASE_URL=http://host.docker.internal:11434 docker compose --profile ollama-local up
