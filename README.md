@@ -1,4 +1,4 @@
-# Parakeet4J Demo
+# Parakeet4J Docker GenAI Stack
 
 ## Install Parakeet4J
 
